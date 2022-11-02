@@ -1,0 +1,120 @@
+#include "select.h"
+#include "util.h"
+#include "array.h"
+
+#include <stdio.h>
+
+#define G 5
+#define g ((G + 1) / 2)
+
+#define INSERTION_SORT_THRESHOLD 15
+
+static int med3(int a, int b, int c) {
+    return a >= b ? b >= c ? b : a >= c ? c : a :
+                    c >= b ? b : a >= c ? a : c;
+}
+
+static int med3i(int a, int b, int c) {
+    return a >= b ? b >= c ? 1 : a >= c ? 2 : 0 :
+           c >= b ? 1 : a >= c ? 0 : 2;
+}
+
+static void swap(int *a, int *b) {
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+/* Only works with *odd* (2n + 1) lengths. The array may be modified.
+ * After completion, the n'th (middle) value in the array will contain the median.*/
+static int mediani(int *arr, int from, int to) {
+    if (to - from < 3) {
+        /* do nothing */
+    } else if (to - from < 5) {
+        swap(&arr[med3i(arr[from], arr[from + 1], arr[from + 2]) + from], &arr[(to + from) / 2]);
+    } else {
+        insertion_sort(arr, from, to);
+    }
+
+    return (to + from) / 2;
+}
+
+int first_pivot(int *arr, int from, int to, int k) {
+    (void) to;
+    (void) k;
+    return arr[from];
+}
+
+int random_pivot(int *arr, int from, int to, int k) {
+    (void) k;
+    return arr[from + randint() % (to - from)]; /* note: introduces slight bias towards lower values */
+}
+
+int med3_pivot(int *arr, int from, int to, int k) {
+    (void) k;
+    return med3(arr[from], arr[(from + to) / 2], arr[to - 1]);
+}
+
+int deterministic_pivot(int *arr, int from, int to, int k) {
+    int j = from;
+    (void) k;
+    for (int i = from; i < to; i += G) {
+        swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
+    }
+    return select(arr, from, j, (from + j) / 2, deterministic_pivot);
+}
+
+int deterministic2_pivot(int *arr, int from, int to, int k) {
+    int j = from;
+    for (int i = from; i < to; i += G) {
+        swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
+    }
+    return select(arr, from, j, med3(
+                      (j + from) / 2,
+                      (k + g - 1 - from) / g + from,
+                      j - 1 - (to - k + g - 2) / g
+                  ), deterministic2_pivot);
+}
+
+static int num_calls = 0;
+
+static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi) {
+    int i = from;
+    *mid = from;
+    *hi = to;
+    while (i < *hi) {
+        if (arr[i] < pivot) {
+            swap(&arr[i++], &arr[(*mid)++]);
+        } else if (arr[i] > pivot) {
+            swap(&arr[i], &arr[--(*hi)]);
+        } else {
+            i++;
+        }
+    }
+    num_calls++;
+}
+
+int get_num_calls(void) {
+    return num_calls;
+}
+
+void reset_num_calls(void) {
+    num_calls = 0;
+}
+
+int select(int *arr, int from, int to, int k, choose_pivot strategy) {
+    while (to - from > INSERTION_SORT_THRESHOLD) {
+        int pivot = strategy(arr, from, to, k);
+        int mid, hi;
+        partition(arr, from, to, pivot, &mid, &hi);
+        if (k >= hi) {
+            from = hi;
+        } else if (k < mid) {
+            to = mid;
+        } else {
+            return arr[k];
+        }
+    }
+    insertion_sort(arr, from, to);
+    return arr[k];
+}
