@@ -6,7 +6,12 @@ static uint32_t rotl(const uint32_t x, int k) {
     return (x << k) | (x >> (32 - k));
 }
 
-static uint32_t s[4] = {0xF00DCAFE, 1, 1, 1};
+static uint32_t s[4] = {1, 0, 0, 0};
+
+void seed(uint32_t n) {
+    s[0] = n;
+    s[1] = s[2] = s[3] = 0;
+}
 
 uint32_t randint(void) {
     const uint32_t result = rotl(s[0] + s[3], 7) + s[0];
