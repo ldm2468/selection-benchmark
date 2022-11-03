@@ -6,4 +6,4 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_executable(deterministic_select main.c select.c select.h array.c array.h util.c util.h)
 
-target_compile_options(deterministic_select PUBLIC -Wall -Wextra -pedantic -Werror -O3 -flto)
+target_compile_options(deterministic_select PUBLIC -Wall -Wextra -pedantic -Werror -O2)
