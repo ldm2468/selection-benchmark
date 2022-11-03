@@ -5,6 +5,7 @@ typedef int (*choose_pivot)(int *arr, int from, int to, int k);
 int first_pivot(int *arr, int from, int to, int k);
 int random_pivot(int *arr, int from, int to, int k);
 int med3_pivot(int *arr, int from, int to, int k);
+int ninther_pivot(int *arr, int from, int to, int k);
 int deterministic_pivot(int *arr, int from, int to, int k);
 int deterministic2_pivot(int *arr, int from, int to, int k);
 

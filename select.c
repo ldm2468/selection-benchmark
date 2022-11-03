@@ -53,6 +53,16 @@ int med3_pivot(int *arr, int from, int to, int k) {
     return med3(arr[from], arr[(from + to) / 2], arr[to - 1]);
 }
 
+int ninther_pivot(int *arr, int from, int to, int k) {
+    int len = to - from;
+    (void) k;
+    return med3(
+        med3(arr[from + 0 * len / 8], arr[from + 3 * len / 8], arr[from + 6 * len / 8]),
+        med3(arr[from + 1 * len / 8], arr[from + 4 * len / 8], arr[from + 7 * len / 8]),
+        med3(arr[from + 2 * len / 8], arr[from + 5 * len / 8], arr[to - 1])
+    );
+}
+
 int deterministic_pivot(int *arr, int from, int to, int k) {
     int j = from;
     (void) k;

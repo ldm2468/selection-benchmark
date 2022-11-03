@@ -24,12 +24,13 @@ static const char* array_type_names[] = {
     "random"
 };
 
-#define PIVOT_ALG_COUNT 5
+#define PIVOT_ALG_COUNT 6
 
 static choose_pivot pivots[] = {
     first_pivot,
     random_pivot,
     med3_pivot,
+    ninther_pivot,
     deterministic_pivot,
     deterministic2_pivot
 };
@@ -38,25 +39,26 @@ static const char* pivot_names[] = {
     "first",
     "random",
     "median_of_3",
+    "ninther",
     "deterministic",
     "deterministic2"
 };
 
-#define ITERATIONS 100
+#define ITERATIONS 101
 
 int main(int argc, char **argv) {
     int *arr = NULL;
-    int n = 1000000, m = -1;
+    int n = 1000000, m = -1, r = 10;
     enum array_type type = array_type_end;
     int opt;
 
     /* parse arguments */
-    while ((opt = getopt(argc, argv, "n:t:m:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:t:m:r:")) != -1) {
         switch (opt) {
         case 'n':
             n = atoi(optarg);
             if (n <= 0) {
-                printf("-n (array size) must be a positive integer\n");
+                fprintf(stderr, "-n (array size) must be a positive integer\n");
                 exit(1);
             }
             break;
@@ -68,25 +70,33 @@ int main(int argc, char **argv) {
                 }
             }
             if (type == array_type_end) {
-                printf("Invalid array type: valid types are 'ascending', 'shuffled', and 'random'");
+                fprintf(stderr, "Invalid array type: valid types are 'ascending', 'shuffled', and 'random'");
                 exit(1);
             }
             break;
         case 'm':
             m = atoi(optarg);
             if (m <= 0) {
-                printf("-m (array modifier) must be a positive integer\n");
+                fprintf(stderr, "-m (array modifier) must be a positive integer\n");
+                exit(1);
+            }
+            break;
+        case 'r':
+            r = atoi(optarg);
+            if (r <= 0) {
+                fprintf(stderr, "-r (number of reps) must be a positive integer\n");
                 exit(1);
             }
             break;
         default:
-            printf("Usage: %s [-n number] [-t type] [-m number] \n", argv[0]);
-            printf("-n: Size of array (default: 1000000)\n"
-                   "-t: Type of array (ascending/shuffled/random, default: shuffled)\n"
-                   "    The type name may also be shortened to its first character (a/s/r)\n"
-                   "-m: A positive integer that affects the array in different ways depending on the type\n"
-                   "    ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
-                   "    random: the range of the random numbers in the array (default: n)\n");
+            fprintf(stderr, "Usage: %s [-n number] [-t type] [-m number] \n", argv[0]);
+            fprintf(stderr, "    -n: Size of array (default: 1000000)\n"
+                            "    -t: Type of array (ascending/shuffled/random, default: shuffled)\n"
+                            "        The type name may also be shortened to its first character (a/s/r)\n"
+                            "    -m: A positive integer that affects the array in different ways depending on the type\n"
+                            "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
+                            "        random: the range of the random numbers in the array (default: n)\n"
+                            "    -r: Number of times to repeat each run (default: 10)\n");
             exit(1);
         }
     }
@@ -111,62 +121,110 @@ int main(int argc, char **argv) {
     /* initialize array */
     arr = malloc(sizeof(int) * n);
     if (arr == NULL) {
-        printf("Array allocation failed.\n");
+        fprintf(stderr, "Array allocation failed.\n");
         exit(1);
     }
+
+    fprintf(stderr, "Note: progress information will be written to stderr.\n"
+                    "It is recommended to redirect stdout to a separate file, "
+                    "otherwise the text will be intermixed and confusing.\n");
 
     /* print array info (csv) */
     printf("array size,type,m\n");
     printf("%d,%s,%d\n", n, array_type_names[type], m);
 
-    /* print statistics */
-    printf("pivot alg,time (ms),stddev,fn calls,stddev\n");
-    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-        float times[ITERATIONS];
-        float calls[ITERATIONS];
+    float times[PIVOT_ALG_COUNT][ITERATIONS];
+    float calls[PIVOT_ALG_COUNT][ITERATIONS];
 
+    /* do the benchmarks */
+    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
         for (int j = 0; j < ITERATIONS; j++) {
             int res;
-            int target = (n * j) / ITERATIONS;
+            int target = ((n - 1) * j) / (ITERATIONS - 1);
             clock_t start, end;
+            float time_sum = 0.f;
+            float calls_sum = 0.f;
 
-            seed(1);
+            for (int k = 0; k < r; k++) {
+                fprintf(stderr, "\r%s: %3d/%3d (%2d/%2d)", pivot_names[i], j, ITERATIONS - 1, k + 1, r);
 
-            switch (type) {
-            case ascending:
-                fill_sequence(arr, 0, n, 0, m);
-                break;
-            case shuffled:
-                fill_sequence(arr, 0, n, 0, m);
-                shuffle(arr, 0, n);
-                break;
-            case random:
-                fill_random(arr, 0, n, 0, m);
-                break;
-            default:
-                break;
+                seed(k + 1);
+
+                switch (type) {
+                case ascending:
+                    fill_sequence(arr, 0, n, 0, m);
+                    break;
+                case shuffled:
+                    fill_sequence(arr, 0, n, 0, m);
+                    shuffle(arr, 0, n);
+                    break;
+                case random:
+                    fill_random(arr, 0, n, 0, m);
+                    break;
+                default:
+                    break;
+                }
+
+                reset_num_calls();
+
+                start = clock();
+                res = select(arr, 0, n, target, pivots[i]);
+                end = clock();
+
+                time_sum += (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
+                calls_sum += (float) get_num_calls();
+
+                if (!check_select(arr, 0, n, target, res)) {
+                    fprintf(stderr, "Algorithm %s is invalid!\n", pivot_names[i]);
+                }
             }
 
-            reset_num_calls();
-
-            start = clock();
-            res = select(arr, 0, n, target, pivots[i]);
-            end = clock();
-
-            if (!check_select(arr, 0, n, target, res)) {
-                fprintf(stderr, "Algorithm %s is invalid!\n", pivot_names[i]);
-            }
-
-            times[j] = (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
-            calls[j] = (float) get_num_calls();
+            times[i][j] = time_sum / (float) r;
+            calls[i][j] = calls_sum / (float) r;
         }
+        fprintf(stderr, " OK\n");
+    }
 
-        printf("%s,%.3f,%.3f,%.3f,%.3f\n",
+    /* print statistics */
+
+    printf("\ntimes (ms)\ni");
+    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+        printf(",%s", pivot_names[i]);
+    }
+    printf("\n");
+    for (int j = 0; j < ITERATIONS; j++) {
+        printf("%g", (float) j / (ITERATIONS - 1));
+        for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+            printf(",%.3f", times[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("\ncalls to partition()\ni");
+    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+        printf(",%s", pivot_names[i]);
+    }
+    printf("\n");
+    for (int j = 0; j < ITERATIONS; j++) {
+        printf("%g", (float) j / (ITERATIONS - 1));
+        for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+            printf(",%.3f", calls[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("\npivot alg,time (ms),min,max,stddev,fn calls,min,max,stddev\n");
+    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+        printf("%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
                pivot_names[i],
-               mean(times, ITERATIONS),
-               stddev(times, ITERATIONS),
-               mean(calls, ITERATIONS),
-               stddev(calls, ITERATIONS));
+               mean(times[i], ITERATIONS),
+               min(times[i], ITERATIONS),
+               max(times[i], ITERATIONS),
+               stddev(times[i], ITERATIONS),
+               mean(calls[i], ITERATIONS),
+               min(calls[i], ITERATIONS),
+               max(calls[i], ITERATIONS),
+               stddev(calls[i], ITERATIONS));
     }
     return 0;
 }
