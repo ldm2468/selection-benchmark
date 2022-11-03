@@ -19,3 +19,23 @@ float stddev(const float values[], int count) {
     }
     return sqrtf(sqsum / (float) (count - 1)); /* sample variance */
 }
+
+float min(const float values[], int count) {
+    int m = 0;
+    for (int i = 1; i < count; i++) {
+        if (values[i] < values[m]) {
+            m = i;
+        }
+    }
+    return values[m];
+}
+
+float max(const float values[], int count) {
+    int m = 0;
+    for (int i = 1; i < count; i++) {
+        if (values[i] > values[m]) {
+            m = i;
+        }
+    }
+    return values[m];
+}

@@ -3,5 +3,7 @@
 
 float mean(const float values[], int count);
 float stddev(const float values[], int count);
+float min(const float values[], int count);
+float max(const float values[], int count);
 
 #endif /* DETERMINISTIC_SELECT_STATS_H */
