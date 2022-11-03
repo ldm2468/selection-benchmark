@@ -31,7 +31,7 @@ void shuffle(int *arr, int from, int to) {
 }
 
 void insertion_sort(int *arr, int from, int to) {
-    for (int i = from; i < to; i++) {
+    for (int i = from + 1; i < to; i++) {
         int tmp = arr[i], j;
         for (j = i - 1; j >= from && arr[j] > tmp; j--) {
             arr[j + 1] = arr[j];
