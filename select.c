@@ -29,13 +29,12 @@ static void swap(int *a, int *b) {
  * After completion, the n'th (middle) value in the array will contain the median.*/
 static int mediani(int *arr, int from, int to) {
     if (to - from < 3) {
-        /* do nothing */
+        return from;
     } else if (to - from < 5) {
-        swap(&arr[med3i(arr[from], arr[from + 1], arr[from + 2]) + from], &arr[(to + from) / 2]);
-    } else {
-        insertion_sort(arr, from, to);
+        return med3i(arr[from], arr[from + 1], arr[from + 2]) + from;
     }
 
+    insertion_sort(arr, from, to);
     return (to + from) / 2;
 }
 
@@ -69,11 +68,19 @@ int deterministic2_pivot(int *arr, int from, int to, int k) {
     for (int i = from; i < to; i += G) {
         swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
     }
-    return select(arr, from, j, med3(
-                      (j + from) / 2,
-                      (k + g - 1 - from) / g + from,
-                      j - 1 - (to - k + g - 2) / g
-                  ), deterministic2_pivot);
+    int sel = med3(
+        (j + from) / 2,
+        (k + g - 1 - from) / g + from,
+        j - 1 - (to - k + g - 2) / g
+    );
+    int pivot = select(arr, from, j, sel, deterministic2_pivot);
+    while (arr[++sel] == pivot && sel < j) { }
+    int offset = to - j;
+    for (int i = sel; i < j; i++) {
+        swap(&arr[i], &arr[offset + i]);
+    }
+
+    return pivot;
 }
 
 static int num_calls = 0;
@@ -117,4 +124,13 @@ int select(int *arr, int from, int to, int k, choose_pivot strategy) {
     }
     insertion_sort(arr, from, to);
     return arr[k];
+}
+
+int check_select(const int *arr, int from, int to, int k, int n) {
+    int less = from, more = 0;
+    for (int i = from; i < to; i++) {
+        less += arr[i] < n;
+        more += arr[i] > n;
+    }
+    return k >= less && k < to - more;
 }

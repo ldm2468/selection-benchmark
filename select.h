@@ -13,4 +13,6 @@ void reset_num_calls(void);
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy);
 
+int check_select(const int *arr, int from, int to, int k, int n);
+
 #endif /* DETERMINISTIC_SELECT_H */

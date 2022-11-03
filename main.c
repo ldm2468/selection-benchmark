@@ -14,6 +14,8 @@ int main(void) {
     start = clock();
     res = select(arr, 0, 100000000, 22222222, deterministic2_pivot);
     end = clock();
+
+    printf(check_select(arr, 0, 100000000, 22222222, res) ? "check passed\n" : "check failed\n");
     printf("%d\n", res);
     printf("num calls: %d\n", get_num_calls());
     printf("time: %.3f ms\n", (float) (end - start) * 1000.f / CLOCKS_PER_SEC);
