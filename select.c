@@ -7,7 +7,7 @@
 #define G 5
 #define g ((G + 1) / 2)
 
-#define INSERTION_SORT_THRESHOLD 15
+#define INSERTION_SORT_THRESHOLD 8
 
 static int med3(int a, int b, int c) {
     return a >= b ? b >= c ? b : a >= c ? c : a :
@@ -25,8 +25,7 @@ static void swap(int *a, int *b) {
     *b = tmp;
 }
 
-/* Only works with *odd* (2n + 1) lengths. The array may be modified.
- * After completion, the n'th (middle) value in the array will contain the median.*/
+/* If the range has even elements, returns either the n/2'th or n/2 + 1'th element. */
 static int mediani(int *arr, int from, int to) {
     if (to - from < 3) {
         return from;
@@ -60,7 +59,10 @@ int deterministic_pivot(int *arr, int from, int to, int k) {
     for (int i = from; i < to; i += G) {
         swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
     }
-    return select(arr, from, j, (from + j) / 2, deterministic_pivot);
+    int sel = (from + j) / 2;
+    int pivot = select(arr, from, j, sel, deterministic_pivot);
+
+    return pivot;
 }
 
 int deterministic2_pivot(int *arr, int from, int to, int k) {
