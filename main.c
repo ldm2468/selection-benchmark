@@ -231,5 +231,6 @@ int main(int argc, char **argv) {
                max(calls[i], ITERATIONS),
                stddev(calls[i], ITERATIONS));
     }
+    free(arr);
     return 0;
 }
