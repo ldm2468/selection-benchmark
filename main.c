@@ -50,7 +50,7 @@ static const char* pivot_names[] = {
 
 int main(int argc, char **argv) {
     int *arr = NULL;
-    int n = 1000000, m = -1, r = 10;
+    int n = 1000000, m = 0, r = 10;
     enum array_type type = array_type_end;
     int opt;
 
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
         type = shuffled; /* default type */
     }
 
-    if (m < 0) {
+    if (m == 0) {
         switch (type) {
         case ascending: case shuffled:
             m = 1;
