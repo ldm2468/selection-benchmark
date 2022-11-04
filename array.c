@@ -62,9 +62,17 @@ void selection_sort(int *arr, int from, int to) {
     }
 }
 
-void print_arr(int *arr, int from, int to) {
+void print_arr(const int *arr, int from, int to) {
     for (int i = from; i < to; i++) {
         printf("%d", arr[i]);
         printf(i == to - 1 ? "\n" : " ");
     }
+}
+
+int xor_sum(const int *arr, int from, int to) {
+    int xor = 0;
+    for (int i = from; i < to; i++) {
+        xor ^= arr[i];
+    }
+    return xor;
 }

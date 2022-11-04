@@ -148,6 +148,7 @@ int main(int argc, char **argv) {
             float calls_sum = 0.f;
 
             for (int k = 0; k < r; k++) {
+                int checksum;
                 fprintf(stderr, "\r%s: %3d/%3d (%2d/%2d)", pivot_names[i], j, ITERATIONS - 1, k + 1, r);
 
                 seed(k + 1);
@@ -167,6 +168,8 @@ int main(int argc, char **argv) {
                     break;
                 }
 
+                checksum = xor_sum(arr, 0, n);
+
                 reset_num_calls();
 
                 start = clock();
@@ -176,7 +179,7 @@ int main(int argc, char **argv) {
                 time_sum += (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
                 calls_sum += (float) get_num_calls();
 
-                if (!check_select(arr, 0, n, target, res)) {
+                if (!check_select(arr, 0, n, target, res) || checksum != xor_sum(arr, 0, n)) {
                     fprintf(stderr, "Algorithm %s is invalid!\n", pivot_names[i]);
                 }
             }
