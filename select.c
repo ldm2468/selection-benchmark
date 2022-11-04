@@ -105,8 +105,8 @@ int deterministic3_pivot(int *arr, int from, int to, int k) {
     int offset = from + stride * 2;
     int sel = med3(
         stride / 2,
-        (k - from) / g,
-        stride - 1 - (to - k) / g
+        (k - from - g + 1) / g,
+        stride - 2 - (to - k - 2) / g
     ) + offset;
     int pivot = select(arr, offset, offset + stride, sel, deterministic3_pivot);
 
