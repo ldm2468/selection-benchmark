@@ -40,6 +40,16 @@ void insertion_sort(int *arr, int from, int to) {
     }
 }
 
+void insertion_sort_stride(int *arr, int from, int to, int stride) {
+    for (int i = from + stride; i < to; i += stride) {
+        int tmp = arr[i], j;
+        for (j = i - stride; j >= from && arr[j] > tmp; j -= stride) {
+            arr[j + stride] = arr[j];
+        }
+        arr[j + stride] = tmp;
+    }
+}
+
 void selection_sort(int *arr, int from, int to) {
     for (int i = from; i < to - 1; i++) {
         int minj = i;

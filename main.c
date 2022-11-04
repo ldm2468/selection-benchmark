@@ -24,7 +24,7 @@ static const char* array_type_names[] = {
     "random"
 };
 
-#define PIVOT_ALG_COUNT 6
+#define PIVOT_ALG_COUNT 7
 
 static choose_pivot pivots[] = {
     first_pivot,
@@ -32,7 +32,8 @@ static choose_pivot pivots[] = {
     med3_pivot,
     ninther_pivot,
     deterministic_pivot,
-    deterministic2_pivot
+    deterministic2_pivot,
+    deterministic3_pivot,
 };
 
 static const char* pivot_names[] = {
@@ -41,7 +42,8 @@ static const char* pivot_names[] = {
     "median_of_3",
     "ninther",
     "deterministic",
-    "deterministic2"
+    "deterministic2",
+    "deterministic3",
 };
 
 #define ITERATIONS 101

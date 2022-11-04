@@ -7,8 +7,6 @@
 #define G 5
 #define g ((G + 1) / 2)
 
-#define INSERTION_SORT_THRESHOLD 8
-
 static int med3(int a, int b, int c) {
     return a >= b ? b >= c ? b : a >= c ? c : a :
                     c >= b ? b : a >= c ? a : c;
@@ -82,8 +80,8 @@ int deterministic2_pivot(int *arr, int from, int to, int k) {
     }
     int sel = med3(
         (j + from) / 2,
-        (k + g - 1 - from) / g + from,
-        j - 1 - (to - k + g - 2) / g
+        (k - from) / g + from,
+        j - 1 - (to - k) / g
     );
     int pivot = select(arr, from, j, sel, deterministic2_pivot);
     while (arr[++sel] == pivot && sel < j) { }
@@ -91,6 +89,26 @@ int deterministic2_pivot(int *arr, int from, int to, int k) {
     for (int i = sel; i < j; i++) {
         swap(&arr[i], &arr[offset + i]);
     }
+
+    return pivot;
+}
+
+int deterministic3_pivot(int *arr, int from, int to, int k) {
+    if (to - from <= G) {
+        insertion_sort(arr, from, to);
+        return arr[k];
+    }
+    int stride = (to - from + G - 1) / G;
+    for (int i = from; i < stride; i++) {
+        insertion_sort_stride(arr, i, to, stride);
+    }
+    int offset = from + stride * 2;
+    int sel = med3(
+        stride / 2,
+        (k - from) / g,
+        stride - 1 - (to - k) / g
+    ) + offset;
+    int pivot = select(arr, offset, offset + stride, sel, deterministic3_pivot);
 
     return pivot;
 }
@@ -122,7 +140,7 @@ void reset_num_calls(void) {
 }
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy) {
-    while (to - from > INSERTION_SORT_THRESHOLD) {
+    while (to - from > 1) {
         int pivot = strategy(arr, from, to, k);
         int mid, hi;
         partition(arr, from, to, pivot, &mid, &hi);
@@ -134,8 +152,7 @@ int select(int *arr, int from, int to, int k, choose_pivot strategy) {
             return arr[k];
         }
     }
-    insertion_sort(arr, from, to);
-    return arr[k];
+    return arr[from];
 }
 
 int check_select(const int *arr, int from, int to, int k, int n) {

@@ -8,6 +8,7 @@ int med3_pivot(int *arr, int from, int to, int k);
 int ninther_pivot(int *arr, int from, int to, int k);
 int deterministic_pivot(int *arr, int from, int to, int k);
 int deterministic2_pivot(int *arr, int from, int to, int k);
+int deterministic3_pivot(int *arr, int from, int to, int k);
 
 int get_num_calls(void);
 void reset_num_calls(void);
