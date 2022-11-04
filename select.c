@@ -94,7 +94,7 @@ int deterministic2_pivot(int *arr, int from, int to, int k) {
 }
 
 int deterministic3_pivot(int *arr, int from, int to, int k) {
-    if (to - from <= G) {
+    if (to - from <= (G - 1) * (G - 1)) {
         insertion_sort(arr, from, to);
         return arr[k];
     }
