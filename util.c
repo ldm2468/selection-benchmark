@@ -11,6 +11,9 @@ static uint32_t s[4] = {1, 1, 1, 1};
 void seed(uint32_t n) {
     s[0] = n;
     s[1] = s[2] = s[3] = 1;
+    for (int i = 0; i < 100; i++) {
+        randint();
+    }
 }
 
 uint32_t randint(void) {
