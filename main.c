@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     while ((opt = getopt(argc, argv, "n:t:m:r:")) != -1) {
         switch (opt) {
         case 'n':
-            n = atoi(optarg);
+            n = (int) strtol(optarg, NULL, 0);
             if (n <= 0) {
                 fprintf(stderr, "-n (array size) must be a positive integer\n");
                 exit(1);
@@ -77,14 +77,14 @@ int main(int argc, char **argv) {
             }
             break;
         case 'm':
-            m = atoi(optarg);
-            if (m <= 0) {
-                fprintf(stderr, "-m (array modifier) must be a positive integer\n");
+            m = (int) strtol(optarg, NULL, 0);
+            if (m == 0) {
+                fprintf(stderr, "-m (array modifier) must be a non-zero integer\n");
                 exit(1);
             }
             break;
         case 'r':
-            r = atoi(optarg);
+            r = (int) strtol(optarg, NULL, 0);
             if (r <= 0) {
                 fprintf(stderr, "-r (number of reps) must be a positive integer\n");
                 exit(1);
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "    -n: Size of array (default: 1000000)\n"
                             "    -t: Type of array (ascending/shuffled/random, default: shuffled)\n"
                             "        The type name may also be shortened to its first character (a/s/r)\n"
-                            "    -m: A positive integer that affects the array in different ways depending on the type\n"
+                            "    -m: A non-zero integer that affects the array in different ways depending on the type\n"
                             "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
                             "        random: the range of the random numbers in the array (default: n)\n"
                             "    -r: Number of times to repeat each run (default: 10)\n");
