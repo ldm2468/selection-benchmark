@@ -71,7 +71,7 @@ int deterministic_pivot(int *arr, int from, int to, int k) {
     return pivot;
 }
 
-int deterministic2_pivot(int *arr, int from, int to, int k) {
+int deterministic_adaptive_pivot(int *arr, int from, int to, int k) {
     int j = from;
     for (int i = from; i < to; i += G) {
         swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
@@ -81,7 +81,7 @@ int deterministic2_pivot(int *arr, int from, int to, int k) {
         (k - from) / g + from,
         j - 1 - (to - k) / g
     );
-    int pivot = select(arr, from, j, sel, deterministic2_pivot);
+    int pivot = select(arr, from, j, sel, deterministic_adaptive_pivot);
     while (arr[++sel] == pivot && sel < j) { }
     int offset = to - j;
     for (int i = sel; i < j; i++) {
@@ -91,7 +91,23 @@ int deterministic2_pivot(int *arr, int from, int to, int k) {
     return pivot;
 }
 
-int deterministic3_pivot(int *arr, int from, int to, int k) {
+int deterministic_strided_pivot(int *arr, int from, int to, int k) {
+    if (to - from <= (G - 1) * (G - 1)) {
+        insertion_sort(arr, from, to);
+        return arr[k];
+    }
+    int stride = (to - from + G - 1) / G;
+    for (int i = from; i < stride; i++) {
+        insertion_sort_stride(arr, i, to, stride);
+    }
+    int offset = from + (to - from) * (g - 1) / G;
+    int sel = stride / 2;
+    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_strided_pivot);
+
+    return pivot;
+}
+
+int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k) {
     if (to - from <= (G - 1) * (G - 1)) {
         insertion_sort(arr, from, to);
         return arr[k];
@@ -106,7 +122,7 @@ int deterministic3_pivot(int *arr, int from, int to, int k) {
         (k - from) / g,
         stride - 1 - (to - k) / g
     );
-    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic3_pivot);
+    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_adaptive_strided_pivot);
 
     return pivot;
 }

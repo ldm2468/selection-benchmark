@@ -30,7 +30,7 @@ static const char* array_type_names[] = {
     "random"
 };
 
-#define PIVOT_ALG_COUNT 7
+#define PIVOT_ALG_COUNT 8
 
 static choose_pivot pivots[] = {
     first_pivot,
@@ -38,18 +38,20 @@ static choose_pivot pivots[] = {
     med3_pivot,
     ninther_pivot,
     deterministic_pivot,
-    deterministic2_pivot,
-    deterministic3_pivot,
+    deterministic_adaptive_pivot,
+    deterministic_strided_pivot,
+    deterministic_adaptive_strided_pivot,
 };
 
 static const char* pivot_names[] = {
-    "first",
-    "random",
-    "median_of_3",
-    "ninther",
-    "deterministic",
-    "deterministic2",
-    "deterministic3",
+    "First",
+    "Random",
+    "Median of 3",
+    "Ninther",
+    "BFPRT",
+    "BFPRTA",
+    "BFPRT+",
+    "BFPRTA+",
 };
 
 #define DEFAULT_ITERATIONS 51
@@ -262,7 +264,7 @@ int main(int argc, char **argv) {
         }
         printf("\n");
         for (int j = 0; j < iterations; j++) {
-            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / (iterations - 1));
+            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
             for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
                 printf(",%.3f", times[i][j]);
             }
@@ -280,7 +282,7 @@ int main(int argc, char **argv) {
         }
         printf("\n");
         for (int j = 0; j < iterations; j++) {
-            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / (iterations - 1));
+            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
             for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
                 printf(",%.3f", calls[i][j]);
             }
