@@ -52,24 +52,30 @@ static const char* pivot_names[] = {
     "deterministic3",
 };
 
-#define ITERATIONS 51
+#define DEFAULT_ITERATIONS 51
+
+static int parse_positive_int_arg(const char *err_msg) {
+    int n = (int) strtol(optarg, NULL, 0);
+    if (n <= 0) {
+        fprintf(stderr, "%s\n", err_msg);
+        exit(1);
+    }
+    return n;
+}
 
 int main(int argc, char **argv) {
     int *arr = NULL;
     int n = 1000000, m = 0, r = 10, fixed_k = -1;
     enum array_type type = array_type_end;
     enum print_type print = all;
+    int iterations = DEFAULT_ITERATIONS;
     int opt;
 
     /* parse arguments */
-    while ((opt = getopt(argc, argv, "n:t:m:r:p:k:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:t:m:r:p:k:i:")) != -1) {
         switch (opt) {
         case 'n':
-            n = (int) strtol(optarg, NULL, 0);
-            if (n <= 0) {
-                fprintf(stderr, "-n (array size) must be a positive integer\n");
-                exit(1);
-            }
+            n = parse_positive_int_arg("-n (array size) must be a positive integer");
             break;
         case 't':
             for (int i = 0; i < array_type_end; i++) {
@@ -91,11 +97,7 @@ int main(int argc, char **argv) {
             }
             break;
         case 'r':
-            r = (int) strtol(optarg, NULL, 0);
-            if (r <= 0) {
-                fprintf(stderr, "-r (number of reps) must be a positive integer\n");
-                exit(1);
-            }
+            r = parse_positive_int_arg("-r (number of reps) must be a positive integer");
             break;
         case 'p':
             switch(optarg[0]) {
@@ -114,11 +116,10 @@ int main(int argc, char **argv) {
             }
             break;
         case 'k':
-            fixed_k = (int) strtol(optarg, NULL, 0);
-            if (fixed_k <= 0) {
-                fprintf(stderr, "-k (element order) must be a positive integer\n");
-                exit(1);
-            }
+            fixed_k = parse_positive_int_arg("-k (element order) must be a positive integer");
+            break;
+        case 'i':
+            iterations = parse_positive_int_arg("-i (iterations) must be a positive integer");
             break;
         default:
             fprintf(stderr, "Usage: %s [-n size] [-t type] [options]... \n", argv[0]);
@@ -131,7 +132,8 @@ int main(int argc, char **argv) {
                             "    -r: Number of times to repeat each run (default: 10)\n"
                             "    -p: What data to print. (a: all, t: times only, c: calls only)\n"
                             "    -k: The order of the element to find.\n"
-                            "        If not specified, a range of values are uniformly selected from 0 to n - 1.\n");
+                            "        If not specified, a range of values are uniformly selected from 0 to n - 1.\n"
+                            "    -i: The number of iterations (number of columns output, default: %d)\n", DEFAULT_ITERATIONS);
             exit(1);
         }
     }
@@ -175,21 +177,26 @@ int main(int argc, char **argv) {
         printf("%d,%s,%d\n", n, array_type_names[type], m);
     }
 
-    float times[PIVOT_ALG_COUNT][ITERATIONS];
-    float calls[PIVOT_ALG_COUNT][ITERATIONS];
+    float *times[PIVOT_ALG_COUNT];
+    float *calls[PIVOT_ALG_COUNT];
+
+    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+        times[i] = malloc(sizeof(float) * iterations);
+        calls[i] = malloc(sizeof(float) * iterations);
+    }
 
     /* do the benchmarks */
     for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-        for (int j = 0; j < ITERATIONS; j++) {
+        for (int j = 0; j < iterations; j++) {
             int res;
-            int target = fixed_k < 0 ? ((n - 1) * j) / (ITERATIONS - 1) : fixed_k;
+            int target = fixed_k < 0 ? ((n - 1) * j) / (iterations - 1) : fixed_k;
             clock_t start, end;
             float time_sum = 0.f;
             float calls_sum = 0.f;
 
             for (int k = 0; k < r; k++) {
                 int checksum;
-                fprintf(stderr, "\r%s: %3d/%3d (%2d/%2d)", pivot_names[i], j, ITERATIONS - 1, k + 1, r);
+                fprintf(stderr, "\r%s: %3d/%3d (%2d/%2d)", pivot_names[i], j, iterations - 1, k + 1, r);
 
                 seed(fixed_k < 0 ? k + 1 : j + 1);
 
@@ -241,8 +248,8 @@ int main(int argc, char **argv) {
             printf(",%s", pivot_names[i]);
         }
         printf("\n");
-        for (int j = 0; j < ITERATIONS; j++) {
-            printf("%g", fixed_k < 0 ? (float) j / (ITERATIONS - 1) : (float) fixed_k / (ITERATIONS - 1));
+        for (int j = 0; j < iterations; j++) {
+            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / (iterations - 1));
             for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
                 printf(",%.3f", times[i][j]);
             }
@@ -259,8 +266,8 @@ int main(int argc, char **argv) {
             printf(",%s", pivot_names[i]);
         }
         printf("\n");
-        for (int j = 0; j < ITERATIONS; j++) {
-            printf("%g", fixed_k < 0 ? (float) j / (ITERATIONS - 1) : (float) fixed_k / (ITERATIONS - 1));
+        for (int j = 0; j < iterations; j++) {
+            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / (iterations - 1));
             for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
                 printf(",%.3f", calls[i][j]);
             }
@@ -273,16 +280,20 @@ int main(int argc, char **argv) {
         for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
             printf("%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
                    pivot_names[i],
-                   mean(times[i], ITERATIONS),
-                   min(times[i], ITERATIONS),
-                   max(times[i], ITERATIONS),
-                   stddev(times[i], ITERATIONS),
-                   mean(calls[i], ITERATIONS),
-                   min(calls[i], ITERATIONS),
-                   max(calls[i], ITERATIONS),
-                   stddev(calls[i], ITERATIONS));
+                   mean(times[i], iterations),
+                   min(times[i], iterations),
+                   max(times[i], iterations),
+                   stddev(times[i], iterations),
+                   mean(calls[i], iterations),
+                   min(calls[i], iterations),
+                   max(calls[i], iterations),
+                   stddev(calls[i], iterations));
         }
     }
     free(arr);
+    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+        free(times[i]);
+        free(calls[i]);
+    }
     return 0;
 }
