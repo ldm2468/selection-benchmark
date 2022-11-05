@@ -192,9 +192,13 @@ int main(int argc, char **argv) {
             int target = fixed_k < 0 ? ((n - 1) * j) / (iterations - 1) : fixed_k;
             clock_t start, end;
             float time_sum = 0.f;
+            float time_max = 0.f;
+            float time_min = 1.f / 0.f; /* infinity */
             float calls_sum = 0.f;
 
             for (int k = 0; k < r; k++) {
+                float curr_time;
+
                 int checksum;
                 fprintf(stderr, "\r%s: %3d/%3d (%2d/%2d)", pivot_names[i], j, iterations - 1, k + 1, r);
 
@@ -223,15 +227,24 @@ int main(int argc, char **argv) {
                 res = select(arr, 0, n, target, pivots[i]);
                 end = clock();
 
-                time_sum += (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
+                curr_time = (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
+                time_sum += curr_time;
                 calls_sum += (float) get_num_calls();
+
+                if (curr_time < time_min) {
+                    time_min = curr_time;
+                }
+                if (curr_time > time_max) {
+                    time_max = curr_time;
+                }
 
                 if (!check_select(arr, 0, n, target, res) || checksum != xor_sum(arr, 0, n)) {
                     fprintf(stderr, "Algorithm %s is incorrect!\n", pivot_names[i]);
                 }
             }
 
-            times[i][j] = time_sum / (float) r;
+            /* eliminate outliers */
+            times[i][j] = r < 3 ? (time_sum / (float) r) : (time_sum - time_min - time_max) / (float) (r - 2);
             calls[i][j] = calls_sum / (float) r;
         }
         fprintf(stderr, " OK\n");
