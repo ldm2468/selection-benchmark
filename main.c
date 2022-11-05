@@ -9,6 +9,12 @@
 #include "util.h"
 #include "stats.h"
 
+enum print_type {
+    all = 0,
+    times_only,
+    calls_only
+};
+
 enum array_type {
     ascending = 0,
     shuffled,
@@ -52,10 +58,11 @@ int main(int argc, char **argv) {
     int *arr = NULL;
     int n = 1000000, m = 0, r = 10;
     enum array_type type = array_type_end;
+    enum print_type print = all;
     int opt;
 
     /* parse arguments */
-    while ((opt = getopt(argc, argv, "n:t:m:r:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:t:m:r:p:")) != -1) {
         switch (opt) {
         case 'n':
             n = (int) strtol(optarg, NULL, 0);
@@ -90,15 +97,32 @@ int main(int argc, char **argv) {
                 exit(1);
             }
             break;
+        case 'p':
+            switch(optarg[0]) {
+            case 'a':
+                print = all;
+                break;
+            case 't':
+                print = times_only;
+                break;
+            case 'c':
+                print = calls_only;
+                break;
+            default:
+                fprintf(stderr, "-p option (print type) must be one of 'a', 't', or 'c'.\n");
+                exit(1);
+            }
+            break;
         default:
-            fprintf(stderr, "Usage: %s [-n number] [-t type] [-m number] \n", argv[0]);
+            fprintf(stderr, "Usage: %s [-n size] [-t type] [options]... \n", argv[0]);
             fprintf(stderr, "    -n: Size of array (default: 1000000)\n"
                             "    -t: Type of array (ascending/shuffled/random, default: shuffled)\n"
                             "        The type name may also be shortened to its first character (a/s/r)\n"
                             "    -m: A non-zero integer that affects the array in different ways depending on the type\n"
                             "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
                             "        random: the range of the random numbers in the array (default: n)\n"
-                            "    -r: Number of times to repeat each run (default: 10)\n");
+                            "    -r: Number of times to repeat each run (default: 10)\n"
+                            "    -p: What data to print. (a: all, t: times only, c: calls only)\n");
             exit(1);
         }
     }
@@ -132,8 +156,10 @@ int main(int argc, char **argv) {
                     "otherwise the text will be intermixed and confusing.\n");
 
     /* print array info (csv) */
-    printf("array size,type,m\n");
-    printf("%d,%s,%d\n", n, array_type_names[type], m);
+    if (print == all) {
+        printf("array size,type,m\n");
+        printf("%d,%s,%d\n", n, array_type_names[type], m);
+    }
 
     float times[PIVOT_ALG_COUNT][ITERATIONS];
     float calls[PIVOT_ALG_COUNT][ITERATIONS];
@@ -192,44 +218,56 @@ int main(int argc, char **argv) {
 
     /* print statistics */
 
-    printf("\ntimes (ms)\ni");
-    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-        printf(",%s", pivot_names[i]);
-    }
-    printf("\n");
-    for (int j = 0; j < ITERATIONS; j++) {
-        printf("%g", (float) j / (ITERATIONS - 1));
+    if (print == all || print == times_only) {
+        if (print == all) {
+            printf("\ntimes (ms)\n");
+        }
+        printf("k/L");
         for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-            printf(",%.3f", times[i][j]);
+            printf(",%s", pivot_names[i]);
         }
         printf("\n");
+        for (int j = 0; j < ITERATIONS; j++) {
+            printf("%g", (float) j / (ITERATIONS - 1));
+            for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+                printf(",%.3f", times[i][j]);
+            }
+            printf("\n");
+        }
     }
 
-    printf("\ncalls to partition()\ni");
-    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-        printf(",%s", pivot_names[i]);
-    }
-    printf("\n");
-    for (int j = 0; j < ITERATIONS; j++) {
-        printf("%g", (float) j / (ITERATIONS - 1));
+    if (print == all || print == calls_only) {
+        if (print == all) {
+            printf("\ncalls to partition()\n");
+        }
+        printf("k/L");
         for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-            printf(",%.3f", calls[i][j]);
+            printf(",%s", pivot_names[i]);
         }
         printf("\n");
+        for (int j = 0; j < ITERATIONS; j++) {
+            printf("%g", (float) j / (ITERATIONS - 1));
+            for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+                printf(",%.3f", calls[i][j]);
+            }
+            printf("\n");
+        }
     }
 
-    printf("\npivot alg,time (ms),min,max,stddev,fn calls,min,max,stddev\n");
-    for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
-        printf("%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
-               pivot_names[i],
-               mean(times[i], ITERATIONS),
-               min(times[i], ITERATIONS),
-               max(times[i], ITERATIONS),
-               stddev(times[i], ITERATIONS),
-               mean(calls[i], ITERATIONS),
-               min(calls[i], ITERATIONS),
-               max(calls[i], ITERATIONS),
-               stddev(calls[i], ITERATIONS));
+    if (print == all) {
+        printf("\npivot alg,time (ms),min,max,stddev,fn calls,min,max,stddev\n");
+        for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
+            printf("%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+                   pivot_names[i],
+                   mean(times[i], ITERATIONS),
+                   min(times[i], ITERATIONS),
+                   max(times[i], ITERATIONS),
+                   stddev(times[i], ITERATIONS),
+                   mean(calls[i], ITERATIONS),
+                   min(calls[i], ITERATIONS),
+                   max(calls[i], ITERATIONS),
+                   stddev(calls[i], ITERATIONS));
+        }
     }
     free(arr);
     return 0;
