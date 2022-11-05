@@ -46,7 +46,7 @@ static const char* pivot_names[] = {
     "deterministic3",
 };
 
-#define ITERATIONS 21
+#define ITERATIONS 51
 
 int main(int argc, char **argv) {
     int *arr = NULL;
