@@ -56,13 +56,13 @@ static const char* pivot_names[] = {
 
 int main(int argc, char **argv) {
     int *arr = NULL;
-    int n = 1000000, m = 0, r = 10;
+    int n = 1000000, m = 0, r = 10, fixed_k = -1;
     enum array_type type = array_type_end;
     enum print_type print = all;
     int opt;
 
     /* parse arguments */
-    while ((opt = getopt(argc, argv, "n:t:m:r:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:t:m:r:p:k:")) != -1) {
         switch (opt) {
         case 'n':
             n = (int) strtol(optarg, NULL, 0);
@@ -109,7 +109,14 @@ int main(int argc, char **argv) {
                 print = calls_only;
                 break;
             default:
-                fprintf(stderr, "-p option (print type) must be one of 'a', 't', or 'c'.\n");
+                fprintf(stderr, "-p option (print type) must be one of 'a', 't', or 'c'\n");
+                exit(1);
+            }
+            break;
+        case 'k':
+            fixed_k = (int) strtol(optarg, NULL, 0);
+            if (fixed_k <= 0) {
+                fprintf(stderr, "-k (element order) must be a positive integer\n");
                 exit(1);
             }
             break;
@@ -122,7 +129,9 @@ int main(int argc, char **argv) {
                             "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
                             "        random: the range of the random numbers in the array (default: n)\n"
                             "    -r: Number of times to repeat each run (default: 10)\n"
-                            "    -p: What data to print. (a: all, t: times only, c: calls only)\n");
+                            "    -p: What data to print. (a: all, t: times only, c: calls only)\n"
+                            "    -k: The order of the element to find.\n"
+                            "        If not specified, a range of values are uniformly selected from 0 to n - 1.\n");
             exit(1);
         }
     }
@@ -142,6 +151,11 @@ int main(int argc, char **argv) {
         default:
             break;
         }
+    }
+
+    if (fixed_k >= n) {
+        fprintf(stderr, "-k (element order) must be < n\n");
+        exit(1);
     }
 
     /* initialize array */
@@ -168,7 +182,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
         for (int j = 0; j < ITERATIONS; j++) {
             int res;
-            int target = ((n - 1) * j) / (ITERATIONS - 1);
+            int target = fixed_k < 0 ? ((n - 1) * j) / (ITERATIONS - 1) : fixed_k;
             clock_t start, end;
             float time_sum = 0.f;
             float calls_sum = 0.f;
@@ -177,7 +191,7 @@ int main(int argc, char **argv) {
                 int checksum;
                 fprintf(stderr, "\r%s: %3d/%3d (%2d/%2d)", pivot_names[i], j, ITERATIONS - 1, k + 1, r);
 
-                seed(k + 1);
+                seed(fixed_k < 0 ? k + 1 : j + 1);
 
                 switch (type) {
                 case ascending:
@@ -206,7 +220,7 @@ int main(int argc, char **argv) {
                 calls_sum += (float) get_num_calls();
 
                 if (!check_select(arr, 0, n, target, res) || checksum != xor_sum(arr, 0, n)) {
-                    fprintf(stderr, "Algorithm %s is invalid!\n", pivot_names[i]);
+                    fprintf(stderr, "Algorithm %s is incorrect!\n", pivot_names[i]);
                 }
             }
 
@@ -228,7 +242,7 @@ int main(int argc, char **argv) {
         }
         printf("\n");
         for (int j = 0; j < ITERATIONS; j++) {
-            printf("%g", (float) j / (ITERATIONS - 1));
+            printf("%g", fixed_k < 0 ? (float) j / (ITERATIONS - 1) : (float) fixed_k / (ITERATIONS - 1));
             for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
                 printf(",%.3f", times[i][j]);
             }
@@ -246,7 +260,7 @@ int main(int argc, char **argv) {
         }
         printf("\n");
         for (int j = 0; j < ITERATIONS; j++) {
-            printf("%g", (float) j / (ITERATIONS - 1));
+            printf("%g", fixed_k < 0 ? (float) j / (ITERATIONS - 1) : (float) fixed_k / (ITERATIONS - 1));
             for (int i = 0; i < PIVOT_ALG_COUNT; i++) {
                 printf(",%.3f", calls[i][j]);
             }
