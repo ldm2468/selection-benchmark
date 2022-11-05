@@ -2,12 +2,19 @@
 #include "util.h"
 #include "array.h"
 
+#include <math.h>
+
 #define G 5
 #define g ((G + 1) / 2)
 
 static int med3(int a, int b, int c) {
     return a >= b ? b >= c ? b : a >= c ? c : a :
-                    c >= b ? b : a >= c ? a : c;
+           c >= b ? b : a >= c ? a : c;
+}
+
+static double med3d(double a, double b, double c) {
+    return a >= b ? b >= c ? b : a >= c ? c : a :
+           c >= b ? b : a >= c ? a : c;
 }
 
 static int med3i(int a, int b, int c) {
@@ -66,7 +73,7 @@ int deterministic_pivot(int *arr, int from, int to, int k) {
         swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
     }
     int sel = (from + j) / 2;
-    int pivot = select(arr, from, j, sel, deterministic_pivot);
+    int pivot = select(arr, from, j, sel, deterministic_pivot, 0);
 
     return pivot;
 }
@@ -81,7 +88,7 @@ int deterministic_adaptive_pivot(int *arr, int from, int to, int k) {
         (k - from) / g + from,
         j - 1 - (to - k) / g
     );
-    int pivot = select(arr, from, j, sel, deterministic_adaptive_pivot);
+    int pivot = select(arr, from, j, sel, deterministic_adaptive_pivot, 0);
     while (arr[++sel] == pivot && sel < j) { }
     int offset = to - j;
     for (int i = sel; i < j; i++) {
@@ -102,7 +109,7 @@ int deterministic_strided_pivot(int *arr, int from, int to, int k) {
     }
     int offset = from + (to - from) * (g - 1) / G;
     int sel = stride / 2;
-    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_strided_pivot);
+    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_strided_pivot, 0);
 
     return pivot;
 }
@@ -122,17 +129,46 @@ int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k) {
         (k - from) / g,
         stride - 1 - (to - k) / g
     );
-    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_adaptive_strided_pivot);
+    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_adaptive_strided_pivot, 0);
+
+    return pivot;
+}
+
+#define GUESS_RATIO 10
+
+static double introduce_bias(double d, double b) {
+    return med3d(d * (1 + b), 0.5, d * (1 + b) - b);
+}
+
+int guess_pivot(int *arr, int from, int to, int k) {
+    int sq = (int) sqrt((double) (to - from));
+    int ratio = MAX(GUESS_RATIO, sq);
+    int len = (to - from) / ratio;
+
+    double relative_pos = (k - from + 0.5) / (double) (to - from);
+    double adjusted = introduce_bias(relative_pos, 1. / (1. + 2. * log10(to - from)));
+
+    partial_shuffle(arr, from, from + len, to);
+    int sel = (int) (adjusted * len);
+    int pivot = select(arr, from, from + len, from + sel, guess_pivot, 0);
 
     return pivot;
 }
 
 static int num_calls = 0;
 
-static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi) {
+static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi, int record) {
     int i = from;
     *mid = from;
     *hi = to;
+    /* skip already partitioned parts
+    while (i < *hi && arr[i] < pivot) {
+        i++;
+        (*mid)++;
+    }
+    while (i < *hi && arr[*hi - 1] > pivot) {
+        (*hi)--;
+    } */
     while (i < *hi) {
         if (arr[i] < pivot) {
             swap(&arr[i++], &arr[(*mid)++]);
@@ -142,7 +178,9 @@ static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi) 
             i++;
         }
     }
-    num_calls++;
+    if (record) {
+        num_calls++;
+    }
 }
 
 int get_num_calls(void) {
@@ -153,11 +191,11 @@ void reset_num_calls(void) {
     num_calls = 0;
 }
 
-int select(int *arr, int from, int to, int k, choose_pivot strategy) {
+int select(int *arr, int from, int to, int k, choose_pivot strategy, int record) {
     while (to - from > 1) {
         int pivot = strategy(arr, from, to, k);
         int mid, hi;
-        partition(arr, from, to, pivot, &mid, &hi);
+        partition(arr, from, to, pivot, &mid, &hi, record);
         if (k >= hi) {
             from = hi;
         } else if (k < mid) {

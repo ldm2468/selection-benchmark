@@ -30,6 +30,13 @@ void shuffle(int *arr, int from, int to) {
     }
 }
 
+void partial_shuffle(int *arr, int from, int to, int sample_last) {
+    for (int i = from; i < to; i++) {
+        int r = (int) (randint() % (sample_last - i));
+        swap(&arr[i], &arr[r + i]);
+    }
+}
+
 void insertion_sort(int *arr, int from, int to) {
     for (int i = from + 1; i < to; i++) {
         int tmp = arr[i], j;

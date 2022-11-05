@@ -30,7 +30,7 @@ static const char* array_type_names[] = {
     "random"
 };
 
-#define PIVOT_ALG_COUNT 8
+#define PIVOT_ALG_COUNT 9
 
 static choose_pivot pivots[] = {
     first_pivot,
@@ -41,6 +41,7 @@ static choose_pivot pivots[] = {
     deterministic_adaptive_pivot,
     deterministic_strided_pivot,
     deterministic_adaptive_strided_pivot,
+    guess_pivot
 };
 
 static const char* pivot_names[] = {
@@ -52,6 +53,7 @@ static const char* pivot_names[] = {
     "BFPRTA",
     "BFPRT+",
     "BFPRTA+",
+    "Guess",
 };
 
 #define DEFAULT_ITERATIONS 51
@@ -226,7 +228,7 @@ int main(int argc, char **argv) {
                 reset_num_calls();
 
                 start = clock();
-                res = select(arr, 0, n, target, pivots[i]);
+                res = select(arr, 0, n, target, pivots[i], 1);
                 end = clock();
 
                 curr_time = (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
