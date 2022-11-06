@@ -19,6 +19,7 @@ void fill_sequence(int *arr, int from, int to, int first, int step) {
     for (int i = from; i < to; i++) {
         arr[i] = first;
         first += step;
+        first %= to;
     }
 }
 
