@@ -15,11 +15,13 @@ void fill_random(int *arr, int from, int to, int min, int max) {
     }
 }
 
-void fill_sequence(int *arr, int from, int to, int first, int step) {
+void fill_sequence(int *arr, int from, int to, int first, int step, int modulo) {
     for (int i = from; i < to; i++) {
         arr[i] = first;
         first += step;
-        first %= to;
+        if (modulo > 0) {
+            first %= modulo;
+        }
     }
 }
 
@@ -35,6 +37,14 @@ void partial_shuffle(int *arr, int from, int to, int sample_last) {
     for (int i = from; i < to; i++) {
         int r = (int) (randint() % (sample_last - i));
         swap(&arr[i], &arr[r + i]);
+    }
+}
+
+void swap_random(int *arr, int from, int to, int reps) {
+    for (int i = 0; i < reps; i++) {
+        int a = (int) (randint() % (to - from));
+        int b = (int) (randint() % (to - from));
+        swap(&arr[a + from], &arr[b + from]);
     }
 }
 

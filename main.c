@@ -19,16 +19,20 @@ enum print_type {
 enum array_type {
     ascending = 0,
     shuffled,
-    random,
+    uniform,
+    rotated,
+    nearly_sorted,
     array_type_end
 };
 
-static const char* array_type_chars = "asr";
+static const char* array_type_chars = "asurn";
 
 static const char* array_type_names[] = {
     "ascending",
     "shuffled",
-    "random"
+    "uniform",
+    "rotated",
+    "nearly sorted",
 };
 
 #define PIVOT_ALG_COUNT 5
@@ -61,9 +65,9 @@ static const char* alg_names[] = {
 
 #define DEFAULT_ITERATIONS 51
 
-static int parse_positive_int_arg(const char *err_msg) {
+static int parse_int_arg(const char *err_msg, int min) {
     int n = (int) strtol(optarg, NULL, 0);
-    if (n <= 0) {
+    if (n < min) {
         fprintf(stderr, "%s\n", err_msg);
         exit(1);
     }
@@ -90,7 +94,7 @@ int main(int argc, char **argv) {
     while ((opt = getopt(argc, argv, "n:t:m:r:p:k:i:")) != -1) {
         switch (opt) {
         case 'n':
-            n = parse_positive_int_arg("-n (array size) must be a positive integer");
+            n = parse_int_arg("-n (array size) must be a positive integer", 1);
             break;
         case 't':
             for (int i = 0; i < array_type_end; i++) {
@@ -100,7 +104,8 @@ int main(int argc, char **argv) {
                 }
             }
             if (type == array_type_end) {
-                fprintf(stderr, "Invalid array type: valid types are 'ascending', 'shuffled', and 'random'");
+                fprintf(stderr, "Invalid array type: valid types are\n"
+                                "'ascending', 'shuffled', 'uniform', 'rotated', and 'nearly_sorted'");
                 exit(1);
             }
             break;
@@ -112,7 +117,7 @@ int main(int argc, char **argv) {
             }
             break;
         case 'r':
-            r = parse_positive_int_arg("-r (number of reps) must be a positive integer");
+            r = parse_int_arg("-r (number of reps) must be a positive integer", 1);
             break;
         case 'p':
             switch(optarg[0]) {
@@ -131,15 +136,15 @@ int main(int argc, char **argv) {
             }
             break;
         case 'k':
-            fixed_k = parse_positive_int_arg("-k (element order) must be a positive integer");
+            fixed_k = parse_int_arg("-k (element order) must be a non-negative integer", 0);
             break;
         case 'i':
-            iterations = parse_positive_int_arg("-i (iterations) must be a positive integer");
+            iterations = parse_int_arg("-i (iterations) must be a positive integer", 1);
             break;
         default:
             fprintf(stderr, "Usage: %s [-n size] [-t type] [options]... \n", argv[0]);
             fprintf(stderr, "    -n: Size of array (default: 1000000)\n"
-                            "    -t: Type of array (ascending/shuffled/random, default: shuffled)\n"
+                            "    -t: Type of array (ascending/shuffled/uniform/rotated/nearly_sorted, default: shuffled)\n"
                             "        The type name may also be shortened to its first character (a/s/r)\n"
                             "    -m: A non-zero integer that affects the array in different ways depending on the type\n"
                             "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
@@ -159,15 +164,32 @@ int main(int argc, char **argv) {
 
     if (m == 0) {
         switch (type) {
-        case ascending: case shuffled:
+        case ascending: case shuffled: case rotated:
             m = 1;
             break;
-        case random:
+        case uniform:
             m = n;
             break;
+        case nearly_sorted:
+            m = n / 10;
         default:
             break;
         }
+    }
+
+    if (type == uniform && m < 0) {
+        fprintf(stderr, "-m must be > 0 for array type = uniform\n");
+        exit(1);
+    }
+
+    if (type == rotated && (m < 0 || m >= n)) {
+        fprintf(stderr, "-m must be in [1..n) for array type = rotated\n");
+        exit(1);
+    }
+
+    if (type == nearly_sorted && (m < 0 || m >= n)) {
+        fprintf(stderr, "-m must be in [1..n) for array type = nearly_sorted\n");
+        exit(1);
     }
 
     if (fixed_k >= n) {
@@ -221,14 +243,22 @@ int main(int argc, char **argv) {
 
                 switch (type) {
                 case ascending:
-                    fill_sequence(arr, 0, n, 0, m);
+                    fill_sequence(arr, 0, n, 0, m, n);
                     break;
                 case shuffled:
-                    fill_sequence(arr, 0, n, 0, m);
+                    fill_sequence(arr, 0, n, 0, m, n);
                     shuffle(arr, 0, n);
                     break;
-                case random:
+                case uniform:
                     fill_random(arr, 0, n, 0, m);
+                    break;
+                case rotated:
+                    fill_sequence(arr, 0, n - m, m, 1, n);
+                    fill_sequence(arr, n - m, n, 0, 1, n);
+                    break;
+                case nearly_sorted:
+                    fill_sequence(arr, 0, n, 0, 1, n);
+                    swap_random(arr, 0, n, m);
                     break;
                 default:
                     break;
