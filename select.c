@@ -137,7 +137,7 @@ int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k) {
 #define GUESS_RATIO 10
 
 static double introduce_bias(double d, double b) {
-    return med3d(d * (1 + b), 0.5, d * (1 + b) - b);
+    return med3d(d + b, 0.5, d - b);
 }
 
 int guess_pivot(int *arr, int from, int to, int k) {
@@ -146,7 +146,7 @@ int guess_pivot(int *arr, int from, int to, int k) {
     int len = (to - from) / ratio;
 
     double relative_pos = (k - from + 0.5) / (double) (to - from);
-    double adjusted = introduce_bias(relative_pos, 1. / (1. + 2. * log10(to - from)));
+    double adjusted = introduce_bias(relative_pos, 1. / (1. + sqrt(to - from)));
 
     partial_shuffle(arr, from, from + len, to);
     int sel = (int) (adjusted * len);
