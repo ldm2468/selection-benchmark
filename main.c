@@ -60,7 +60,7 @@ static const char* alg_names[] = {
 //    "BFPRT+",
     "BFPRTA+",
     "Guess",
-    "gnu std",
+    "GNU libstdc++",
 };
 
 #define DEFAULT_ITERATIONS 51
@@ -88,10 +88,11 @@ int main(int argc, char **argv) {
     enum array_type type = array_type_end;
     enum print_type print = all;
     int iterations = DEFAULT_ITERATIONS;
+    int alg_mask = 0xFFFF;
     int opt;
 
     /* parse arguments */
-    while ((opt = getopt(argc, argv, "n:t:m:r:p:k:i:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:t:m:r:p:k:i:a:")) != -1) {
         switch (opt) {
         case 'n':
             n = parse_int_arg("-n (array size) must be a positive integer", 1);
@@ -141,6 +142,13 @@ int main(int argc, char **argv) {
         case 'i':
             iterations = parse_int_arg("-i (iterations) must be a positive integer", 1);
             break;
+        case 'a':
+            alg_mask = (int) strtol(optarg, NULL, 2);
+            if ((alg_mask & ((1 << ALG_COUNT) - 1)) == 0) {
+                fprintf(stderr, "At least one algorithm must be enabled");
+                exit(1);
+            }
+            break;
         default:
             fprintf(stderr, "Usage: %s [-n size] [-t type] [options]... \n", argv[0]);
             fprintf(stderr, "    -n: Size of array (default: 1000000)\n"
@@ -153,7 +161,8 @@ int main(int argc, char **argv) {
                             "    -p: What data to print. (a: all, t: times only, c: calls only)\n"
                             "    -k: The order of the element to find.\n"
                             "        If not specified, a range of values are uniformly selected from 0 to n - 1.\n"
-                            "    -i: The number of iterations (number of columns output, default: %d)\n", DEFAULT_ITERATIONS);
+                            "    -i: The number of iterations (number of columns output, default: %d)\n"
+                            "    -a: A binary mask of algorithms to run. (ex. 100101)\n", DEFAULT_ITERATIONS);
             exit(1);
         }
     }
@@ -224,6 +233,9 @@ int main(int argc, char **argv) {
 
     /* do the benchmarks */
     for (int i = 0; i < ALG_COUNT; i++) {
+        if ((alg_mask & (1 << i)) == 0) {
+            continue;
+        }
         for (int j = 0; j < iterations; j++) {
             int res;
             int target = fixed_k < 0 ? ((n - 1) * j) / (iterations - 1) : fixed_k;
@@ -303,12 +315,18 @@ int main(int argc, char **argv) {
         }
         printf("k/L");
         for (int i = 0; i < ALG_COUNT; i++) {
+            if ((alg_mask & (1 << i)) == 0) {
+                continue;
+            }
             printf(",%s", alg_names[i]);
         }
         printf("\n");
         for (int j = 0; j < iterations; j++) {
             printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
             for (int i = 0; i < ALG_COUNT; i++) {
+                if ((alg_mask & (1 << i)) == 0) {
+                    continue;
+                }
                 printf(",%.3f", times[i][j]);
             }
             printf("\n");
@@ -321,12 +339,18 @@ int main(int argc, char **argv) {
         }
         printf("k/L");
         for (int i = 0; i < ALG_COUNT; i++) {
+            if ((alg_mask & (1 << i)) == 0) {
+                continue;
+            }
             printf(",%s", alg_names[i]);
         }
         printf("\n");
         for (int j = 0; j < iterations; j++) {
             printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
             for (int i = 0; i < ALG_COUNT; i++) {
+                if ((alg_mask & (1 << i)) == 0) {
+                    continue;
+                }
                 printf(",%.3f", calls[i][j]);
             }
             printf("\n");
@@ -336,6 +360,9 @@ int main(int argc, char **argv) {
     if (print == all) {
         printf("\npivot alg,time (ms),min,max,stddev,fn calls,min,max,stddev\n");
         for (int i = 0; i < ALG_COUNT; i++) {
+            if ((alg_mask & (1 << i)) == 0) {
+                continue;
+            }
             printf("%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
                    alg_names[i],
                    mean(times[i], iterations),
