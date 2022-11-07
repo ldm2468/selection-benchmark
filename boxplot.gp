@@ -1,4 +1,4 @@
-set style fill solid 0 border linecolor "black"
+set style fill solid 0 border 0
 set style data boxplot
 set datafile separator ','
 set datafile columnheaders
@@ -14,11 +14,15 @@ do for[i=2:STATS_columns] {
 set xrange [1:STATS_columns+1]
 set yrange [0:]
 
-set terminal pict2e texarrows size 10cm,8cm
-set xtics noenhanced
-set xtics rotate
+set terminal pict2e texarrows size 8cm,6cm
+set xtics noenhanced nomirror
+set xtics rotate by 30 right
+set xtics out
+set ytics nomirror
 
-set style boxplot fraction 1
+set style boxplot pointtype 0
+
+set grid ytics
 
 unset key
 
