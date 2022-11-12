@@ -60,7 +60,7 @@ static const char* alg_names[] = {
 //    "BFPRT+",
     "BFPRTA+",
     "Guess",
-    "GNU libstdc++",
+    "libstdc++",
 };
 
 #define DEFAULT_ITERATIONS 51
