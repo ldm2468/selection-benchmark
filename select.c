@@ -142,8 +142,7 @@ static double introduce_bias(double d, double b) {
 
 int guess_pivot(int *arr, int from, int to, int k) {
     int sq = (int) sqrt((double) (to - from));
-    int ratio = MAX(MIN_GUESS_RATIO, sq);
-    int len = (to - from) / ratio;
+    int len = MIN(sq, (to - from) / MIN_GUESS_RATIO);
 
     double N = to - from;
     double K = len;
@@ -151,6 +150,7 @@ int guess_pivot(int *arr, int from, int to, int k) {
     double loc = ((K + 1.) / (N + 1.) * T - (N - K) / (N + 1.)) / (K - 1);
     double R = (T - 1) / N;
     int sel = (int) (introduce_bias(loc, 2. * sqrt((R) * (1 - R) / (K + 1))) * (K - 1) + 0.5);
+    sel = med3(0, sel, len - 1);
 
     partial_shuffle(arr, from, from + len, to);
     int pivot = select(arr, from, from + len, from + sel, guess_pivot, 0);
@@ -196,9 +196,6 @@ void reset_num_calls(void) {
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy, int record) {
     while (to - from > 1) {
-//        if (record) {
-//            printf("%d %d\n", from, to);
-//        }
         int pivot = strategy(arr, from, to, k);
         int mid, hi;
         partition(arr, from, to, pivot, &mid, &hi, record);
