@@ -17,9 +17,10 @@ static double med3d(double a, double b, double c) {
            c >= b ? b : a >= c ? a : c;
 }
 
-static int med3i(int a, int b, int c) {
-    return a >= b ? b >= c ? 1 : a >= c ? 2 : 0 :
-           c >= b ? 1 : a >= c ? 0 : 2;
+static int med3i(const int *arr, int i, int j, int k) {
+    int a = arr[i], b = arr[j], c = arr[k];
+    return a >= b ? b >= c ? j : a >= c ? k : i :
+           c >= b ? j : a >= c ? i : k;
 }
 
 static void swap(int *a, int *b) {
@@ -33,7 +34,7 @@ static int mediani(int *arr, int from, int to) {
     if (to - from < 3) {
         return from;
     } else if (to - from < 5) {
-        return med3i(arr[from], arr[from + 1], arr[from + 2]) + from;
+        return med3i(arr, from, from + 1, from + 2);
     }
 
     insertion_sort(arr, from, to);
@@ -43,26 +44,28 @@ static int mediani(int *arr, int from, int to) {
 int first_pivot(int *arr, int from, int to, int k) {
     (void) to;
     (void) k;
-    return arr[from];
+    (void) arr;
+    return from;
 }
 
 int random_pivot(int *arr, int from, int to, int k) {
     (void) k;
-    return arr[from + randint() % (to - from)]; /* note: introduces slight bias towards lower values */
+    (void) arr;
+    return from + randint() % (to - from); /* note: introduces slight bias towards lower values */
 }
 
 int med3_pivot(int *arr, int from, int to, int k) {
     (void) k;
-    return med3(arr[from], arr[(from + to) / 2], arr[to - 1]);
+    return med3i(arr, from, (from + to) / 2, to - 1);
 }
 
 int ninther_pivot(int *arr, int from, int to, int k) {
     int len = to - from;
     (void) k;
-    return med3(
-        med3(arr[from + 0 * len / 8], arr[from + 3 * len / 8], arr[from + 6 * len / 8]),
-        med3(arr[from + 1 * len / 8], arr[from + 4 * len / 8], arr[from + 7 * len / 8]),
-        med3(arr[from + 2 * len / 8], arr[from + 5 * len / 8], arr[to - 1])
+    return med3i(arr,
+        med3i(arr, from + 0 * len / 8, from + 3 * len / 8, from + 6 * len / 8),
+        med3i(arr, from + 1 * len / 8, from + 4 * len / 8, from + 7 * len / 8),
+        med3i(arr, from + 2 * len / 8, from + 5 * len / 8, to - 1)
     );
 }
 
@@ -73,9 +76,9 @@ int deterministic_pivot(int *arr, int from, int to, int k) {
         swap(&arr[mediani(arr, i, (i + G) > to ? to : i + G)], &arr[j++]);
     }
     int sel = (from + j) / 2;
-    int pivot = select(arr, from, j, sel, deterministic_pivot, 0);
+    select(arr, from, j, sel, deterministic_pivot, 0);
 
-    return pivot;
+    return sel;
 }
 
 int deterministic_adaptive_pivot(int *arr, int from, int to, int k) {
@@ -88,20 +91,15 @@ int deterministic_adaptive_pivot(int *arr, int from, int to, int k) {
         (k - from) / g + from,
         j - 1 - (to - k) / g
     );
-    int pivot = select(arr, from, j, sel, deterministic_adaptive_pivot, 0);
-    while (arr[++sel] == pivot && sel < j) { }
-    int offset = to - j;
-    for (int i = sel; i < j; i++) {
-        swap(&arr[i], &arr[offset + i]);
-    }
+    select(arr, from, j, sel, deterministic_adaptive_pivot, 0);
 
-    return pivot;
+    return sel;
 }
 
 int deterministic_strided_pivot(int *arr, int from, int to, int k) {
     if (to - from <= (G - 1) * (G - 1)) {
         insertion_sort(arr, from, to);
-        return arr[k];
+        return k;
     }
     int stride = (to - from + G - 1) / G;
     for (int i = from; i < stride; i++) {
@@ -109,15 +107,15 @@ int deterministic_strided_pivot(int *arr, int from, int to, int k) {
     }
     int offset = from + (to - from) * (g - 1) / G;
     int sel = stride / 2;
-    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_strided_pivot, 0);
+    select(arr, offset, offset + stride, offset + sel, deterministic_strided_pivot, 0);
 
-    return pivot;
+    return offset + sel;
 }
 
 int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k) {
     if (to - from <= (G - 1) * (G - 1)) {
         insertion_sort(arr, from, to);
-        return arr[k];
+        return k;
     }
     int stride = (to - from + G - 1) / G;
     for (int i = from; i < stride; i++) {
@@ -129,9 +127,9 @@ int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k) {
         (k - from) / g,
         stride - 1 - (to - k) / g
     );
-    int pivot = select(arr, offset, offset + stride, offset + sel, deterministic_adaptive_strided_pivot, 0);
+    select(arr, offset, offset + stride, offset + sel, deterministic_adaptive_strided_pivot, 0);
 
-    return pivot;
+    return offset + sel;
 }
 
 #define MIN_GUESS_RATIO 2
@@ -153,34 +151,29 @@ int guess_pivot(int *arr, int from, int to, int k) {
     sel = med3(0, sel, len - 1);
 
     partial_shuffle(arr, from, from + len, to);
-    int pivot = select(arr, from, from + len, from + sel, guess_pivot, 0);
+    select(arr, from, from + len, from + sel, guess_pivot, 0);
 
-    return pivot;
+    return from + sel;
 }
 
 static int num_calls = 0;
 static int bad_pivots = 0;
 
-static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi) {
-    int i = from;
-    *mid = from;
-    *hi = to;
-    /* skip already partitioned parts
-    while (i < *hi && arr[i] < pivot) {
-        i++;
-        (*mid)++;
-    }
-    while (i < *hi && arr[*hi - 1] > pivot) {
-        (*hi)--;
-    } */
-    while (i < *hi) {
-        if (arr[i] < pivot) {
-            swap(&arr[i++], &arr[(*mid)++]);
-        } else if (arr[i] > pivot) {
-            swap(&arr[i], &arr[--(*hi)]);
-        } else {
-            i++;
+static int partition(int *arr, int from, int to, int pivot) {
+    /* basic hoare partition that also divides same values evenly */
+    /* pivot must not be at the last element!! */
+    int i = from - 1, j = to;
+    while (1) {
+        do {
+            ++i;
+        } while (arr[i] < pivot);
+        do {
+            --j;
+        } while (arr[j] > pivot);
+        if (i >= j) {
+            return j + 1;
         }
+        swap(&arr[i], &arr[j]);
     }
 }
 
@@ -199,23 +192,21 @@ void reset_num_calls(void) {
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy, int record) {
     while (to - from > 1) {
-        int pivot = strategy(arr, from, to, k);
-        int mid, hi;
-        partition(arr, from, to, pivot, &mid, &hi);
+        int pivot_loc = strategy(arr, from, to, k);
+        swap(&arr[from], &arr[pivot_loc]); /* prevent pivot element from being at the end */
+        int p = partition(arr, from, to, arr[from]);
         if (record) {
             num_calls++;
-            int left_len = mid - from;
-            int right_len = to - hi;
-            if ((left_len * 2 < right_len && k >= hi) || (left_len > right_len * 2 && k < mid)) {
+            int left_len = p - from;
+            int right_len = to - p;
+            if ((left_len * 2 < right_len && k >= p) || (left_len > right_len * 2 && k < p)) {
                 bad_pivots++;
             }
         }
-        if (k >= hi) {
-            from = hi;
-        } else if (k < mid) {
-            to = mid;
+        if (k >= p) {
+            from = p;
         } else {
-            return arr[k];
+            to = p;
         }
     }
     return arr[from];
