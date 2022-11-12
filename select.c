@@ -148,7 +148,7 @@ int guess_pivot(int *arr, int from, int to, int k) {
     double K = len;
     double T = k - from;
     double loc = ((K + 1.) / (N + 1.) * T - (N - K) / (N + 1.)) / (K - 1);
-    double R = (T - 1) / N;
+    double R = T / (N - 1.);
     int sel = (int) (introduce_bias(loc, 2. * sqrt((R) * (1 - R) / (K + 1))) * (K - 1) + 0.5);
     sel = med3(0, sel, len - 1);
 
