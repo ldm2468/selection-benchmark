@@ -13,6 +13,7 @@ int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k);
 int guess_pivot(int *arr, int from, int to, int k);
 
 int get_num_calls(void);
+int get_bad_pivot_count(void);
 void reset_num_calls(void);
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy, int record);

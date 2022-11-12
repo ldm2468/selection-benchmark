@@ -13,7 +13,8 @@
 enum print_type {
     all = 0,
     times_only,
-    calls_only
+    calls_only,
+    ratios_only
 };
 
 enum array_type {
@@ -74,11 +75,35 @@ static int parse_int_arg(const char *err_msg, int min) {
     return n;
 }
 
-int do_select(int *arr, int size, int k, int alg) {
+static int do_select(int *arr, int size, int k, int alg) {
     if (alg < PIVOT_ALG_COUNT) {
         return select(arr, 0, size, k, pivots[alg], 1);
     } else {
         return select_cpp(arr, 0, size, k);
+    }
+}
+
+static void print_stats(int alg_mask, int fixed_k, int iterations, int print, int n, float **arr, const char *name) {
+    if (print == all) {
+        printf("\n%s\n", name);
+    }
+    printf("k/L");
+    for (int i = 0; i < ALG_COUNT; i++) {
+        if ((alg_mask & (1 << i)) == 0) {
+            continue;
+        }
+        printf(",%s", alg_names[i]);
+    }
+    printf("\n");
+    for (int j = 0; j < iterations; j++) {
+        printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
+        for (int i = 0; i < ALG_COUNT; i++) {
+            if ((alg_mask & (1 << i)) == 0) {
+                continue;
+            }
+            printf(",%.3f", arr[i][j]);
+        }
+        printf("\n");
     }
 }
 
@@ -131,8 +156,11 @@ int main(int argc, char **argv) {
             case 'c':
                 print = calls_only;
                 break;
+            case 'r':
+                print = ratios_only;
+                break;
             default:
-                fprintf(stderr, "-p option (print type) must be one of 'a', 't', or 'c'\n");
+                fprintf(stderr, "-p option (print type) must be one of 'a', 't', 'c', or 'r'\n");
                 exit(1);
             }
             break;
@@ -158,7 +186,7 @@ int main(int argc, char **argv) {
                             "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
                             "        random: the range of the random numbers in the array (default: n)\n"
                             "    -r: Number of times to repeat each run (default: 10)\n"
-                            "    -p: What data to print. (a: all, t: times only, c: calls only)\n"
+                            "    -p: What data to print. (a: all, t: times only, c: calls only, r: ratios only)\n"
                             "    -k: The order of the element to find.\n"
                             "        If not specified, a range of values are uniformly selected from 0 to n - 1.\n"
                             "    -i: The number of iterations (number of columns output, default: %d)\n"
@@ -225,10 +253,12 @@ int main(int argc, char **argv) {
 
     float *times[ALG_COUNT];
     float *calls[ALG_COUNT];
+    float *ratios[ALG_COUNT];
 
     for (int i = 0; i < ALG_COUNT; i++) {
         times[i] = malloc(sizeof(float) * iterations);
         calls[i] = malloc(sizeof(float) * iterations);
+        ratios[i] = malloc(sizeof(float) * iterations);
     }
 
     /* do the benchmarks */
@@ -244,6 +274,7 @@ int main(int argc, char **argv) {
             float time_max = 0.f;
             float time_min = 1.f / 0.f; /* infinity */
             float calls_sum = 0.f;
+            float bad_pivot_sum = 0.f;
 
             for (int k = 0; k < r; k++) {
                 float curr_time;
@@ -287,6 +318,7 @@ int main(int argc, char **argv) {
                 curr_time = (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
                 time_sum += curr_time;
                 calls_sum += (float) get_num_calls();
+                bad_pivot_sum += (float) get_bad_pivot_count();
 
                 if (curr_time < time_min) {
                     time_min = curr_time;
@@ -303,6 +335,7 @@ int main(int argc, char **argv) {
             /* eliminate outliers */
             times[i][j] = r < 3 ? (time_sum / (float) r) : (time_sum - time_min - time_max) / (float) (r - 2);
             calls[i][j] = calls_sum / (float) r;
+            ratios[i][j] = bad_pivot_sum / (calls_sum + 1E-9f); // prevent division by zero
         }
         fprintf(stderr, " OK\n");
     }
@@ -310,60 +343,24 @@ int main(int argc, char **argv) {
     /* print statistics */
 
     if (print == all || print == times_only) {
-        if (print == all) {
-            printf("\ntimes (ms)\n");
-        }
-        printf("k/L");
-        for (int i = 0; i < ALG_COUNT; i++) {
-            if ((alg_mask & (1 << i)) == 0) {
-                continue;
-            }
-            printf(",%s", alg_names[i]);
-        }
-        printf("\n");
-        for (int j = 0; j < iterations; j++) {
-            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
-            for (int i = 0; i < ALG_COUNT; i++) {
-                if ((alg_mask & (1 << i)) == 0) {
-                    continue;
-                }
-                printf(",%.3f", times[i][j]);
-            }
-            printf("\n");
-        }
+        print_stats(alg_mask, fixed_k, iterations, print, n, times, "times (ms)");
     }
 
     if (print == all || print == calls_only) {
-        if (print == all) {
-            printf("\ncalls to partition()\n");
-        }
-        printf("k/L");
-        for (int i = 0; i < ALG_COUNT; i++) {
-            if ((alg_mask & (1 << i)) == 0) {
-                continue;
-            }
-            printf(",%s", alg_names[i]);
-        }
-        printf("\n");
-        for (int j = 0; j < iterations; j++) {
-            printf("%g", fixed_k < 0 ? (float) j / (iterations - 1) : (float) fixed_k / n);
-            for (int i = 0; i < ALG_COUNT; i++) {
-                if ((alg_mask & (1 << i)) == 0) {
-                    continue;
-                }
-                printf(",%.3f", calls[i][j]);
-            }
-            printf("\n");
-        }
+        print_stats(alg_mask, fixed_k, iterations, print, n, calls, "calls to partition()");
+    }
+
+    if (print == all || print == ratios_only) {
+        print_stats(alg_mask, fixed_k, iterations, print, n, ratios, "ratio of bad pivot choices");
     }
 
     if (print == all) {
-        printf("\npivot alg,time (ms),min,max,stddev,fn calls,min,max,stddev\n");
+        printf("\npivot alg,time (ms),min,max,stddev,fn calls,min,max,stddev,bad pivot ratio,min,max,stddev\n");
         for (int i = 0; i < ALG_COUNT; i++) {
             if ((alg_mask & (1 << i)) == 0) {
                 continue;
             }
-            printf("%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+            printf("%9s,%9.3f,%9.3f,%9.3f,%9.3f,%6.3f,%6.3f,%6.3f,%6.3f,%5.3f,%5.3f,%5.3f,%5.3f\n",
                    alg_names[i],
                    mean(times[i], iterations),
                    min(times[i], iterations),
@@ -372,13 +369,18 @@ int main(int argc, char **argv) {
                    mean(calls[i], iterations),
                    min(calls[i], iterations),
                    max(calls[i], iterations),
-                   stddev(calls[i], iterations));
+                   stddev(calls[i], iterations),
+                   mean(ratios[i], iterations),
+                   min(ratios[i], iterations),
+                   max(ratios[i], iterations),
+                   stddev(ratios[i], iterations));
         }
     }
     free(arr);
     for (int i = 0; i < ALG_COUNT; i++) {
         free(times[i]);
         free(calls[i]);
+        free(ratios[i]);
     }
     return 0;
 }

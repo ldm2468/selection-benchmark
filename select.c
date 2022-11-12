@@ -159,8 +159,9 @@ int guess_pivot(int *arr, int from, int to, int k) {
 }
 
 static int num_calls = 0;
+static int bad_pivots = 0;
 
-static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi, int record) {
+static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi) {
     int i = from;
     *mid = from;
     *hi = to;
@@ -181,24 +182,34 @@ static void partition(int *arr, int from, int to, int pivot, int *mid, int *hi, 
             i++;
         }
     }
-    if (record) {
-        num_calls++;
-    }
 }
 
 int get_num_calls(void) {
     return num_calls;
 }
 
+int get_bad_pivot_count(void) {
+    return bad_pivots;
+}
+
 void reset_num_calls(void) {
     num_calls = 0;
+    bad_pivots = 0;
 }
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy, int record) {
     while (to - from > 1) {
         int pivot = strategy(arr, from, to, k);
         int mid, hi;
-        partition(arr, from, to, pivot, &mid, &hi, record);
+        partition(arr, from, to, pivot, &mid, &hi);
+        if (record) {
+            num_calls++;
+            int left_len = mid - from;
+            int right_len = to - hi;
+            if ((left_len * 2 < right_len && k >= hi) || (left_len > right_len * 2 && k < mid)) {
+                bad_pivots++;
+            }
+        }
         if (k >= hi) {
             from = hi;
         } else if (k < mid) {
