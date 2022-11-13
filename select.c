@@ -143,11 +143,12 @@ int guess_pivot(int *arr, int from, int to, int k) {
     int len = MIN(sq, (to - from) / MIN_GUESS_RATIO);
 
     double N = to - from;
-    double K = len;
+    double n = len;
     double T = k - from;
-    double loc = ((K + 1.) / (N + 1.) * T - (N - K) / (N + 1.)) / (K - 1);
-    double R = T / (N - 1.);
-    int sel = (int) (introduce_bias(loc, 2. * sqrt((R) * (1 - R) / (K + 1))) * (K - 1) + 0.5);
+    double loc = ((n + 1.) / (N + 1.) * (T + 1.) - 1.) / (n - 1.);
+    double R = (T + 1.) / (N + 1.);
+    double sigma = sqrt(R * (1. - R) * (N - n) * (N + 1.) / (n + 2.)) / (n + 1.) / (n - 1.);
+    int sel = (int) (introduce_bias(loc, 2. * sigma) * (n - 1) + 0.5);
     sel = med3(0, sel, len - 1);
 
     partial_shuffle(arr, from, from + len, to);
