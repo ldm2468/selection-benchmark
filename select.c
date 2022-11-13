@@ -191,8 +191,10 @@ void reset_num_calls(void) {
     bad_pivots = 0;
 }
 
+#define INSERTION_SORT_THRESHOLD 32
+
 int select(int *arr, int from, int to, int k, choose_pivot strategy, int record) {
-    while (to - from > 1) {
+    while (to - from > INSERTION_SORT_THRESHOLD) {
         int pivot_loc = strategy(arr, from, to, k);
         swap(&arr[from], &arr[pivot_loc]); /* prevent pivot element from being at the end */
         int p = partition(arr, from, to, arr[from]);
@@ -210,7 +212,8 @@ int select(int *arr, int from, int to, int k, choose_pivot strategy, int record)
             to = p;
         }
     }
-    return arr[from];
+    insertion_sort(arr, from, to);
+    return arr[k];
 }
 
 int check_select(const int *arr, int from, int to, int k, int n) {
