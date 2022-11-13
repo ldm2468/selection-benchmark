@@ -75,9 +75,9 @@ static int parse_int_arg(const char *err_msg, int min) {
     return n;
 }
 
-static int do_select(int *arr, int size, int k, int alg) {
+static int do_select(int *arr, int size, int k, int alg, int record) {
     if (alg < PIVOT_ALG_COUNT) {
-        return select(arr, 0, size, k, pivots[alg], 1);
+        return select(arr, 0, size, k, pivots[alg], record);
     } else {
         return select_cpp(arr, 0, size, k);
     }
@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
                 reset_num_calls();
 
                 start = clock();
-                res = do_select(arr, n, target, i);
+                res = do_select(arr, n, target, i, print != times_only);
                 end = clock();
 
                 curr_time = (float) (end - start) * 1000.f / CLOCKS_PER_SEC;
