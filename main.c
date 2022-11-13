@@ -60,7 +60,7 @@ static const char* alg_names[] = {
 //    "BFPRTA",
 //    "BFPRT+",
     "BFPRTA+",
-    "Guess",
+    "Sampling",
     "libstdc++",
 };
 
@@ -101,7 +101,7 @@ static void print_stats(int alg_mask, int fixed_k, int iterations, int print, in
             if ((alg_mask & (1 << i)) == 0) {
                 continue;
             }
-            printf(",%.3f", arr[i][j]);
+            printf(",%.5f", arr[i][j]);
         }
         printf("\n");
     }
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
             if ((alg_mask & (1 << i)) == 0) {
                 continue;
             }
-            printf("%9s,%9.3f,%9.3f,%9.3f,%9.3f,%6.3f,%6.3f,%6.3f,%6.3f,%5.3f,%5.3f,%5.3f,%5.3f\n",
+            printf("%9s,%9.5f,%9.5f,%9.5f,%9.5f,%6.5f,%6.5f,%6.5f,%6.5f,%5.5f,%5.5f,%5.5f,%5.5f\n",
                    alg_names[i],
                    mean(times[i], iterations),
                    min(times[i], iterations),
