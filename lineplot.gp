@@ -7,10 +7,9 @@ stats file u 0 nooutput
 
 set yrange [0:]
 
-set terminal pict2e gppoints texarrows size 8cm,6cm
-set xtics nomirror
+set xtics nomirror noenhanced
 set xtics out
-set ytics nomirror
+set ytics nomirror noenhanced
 
 set grid ytics
 

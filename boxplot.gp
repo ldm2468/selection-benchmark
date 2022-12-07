@@ -14,7 +14,6 @@ do for[i=2:STATS_columns] {
 set xrange [1:STATS_columns+1]
 set yrange [0:]
 
-set terminal pict2e texarrows size 8cm,6cm
 set xtics noenhanced nomirror
 set xtics rotate by 30 right
 set xtics out
