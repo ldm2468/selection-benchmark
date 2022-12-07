@@ -10,7 +10,7 @@ int deterministic_pivot(int *arr, int from, int to, int k);
 int deterministic_adaptive_pivot(int *arr, int from, int to, int k);
 int deterministic_strided_pivot(int *arr, int from, int to, int k);
 int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k);
-int guess_pivot(int *arr, int from, int to, int k);
+int sampling_pivot(int *arr, int from, int to, int k);
 
 int get_num_calls(void);
 int get_bad_pivot_count(void);

@@ -139,7 +139,7 @@ static double introduce_bias(double d, double b) {
     return med3d(d + b, 0.5, d - b);
 }
 
-int guess_pivot(int *arr, int from, int to, int k) {
+int sampling_pivot(int *arr, int from, int to, int k) {
     if (to - from <= INSERTION_SORT_THRESHOLD) {
         return random_pivot(arr, from, to, k);
     }
@@ -157,7 +157,7 @@ int guess_pivot(int *arr, int from, int to, int k) {
     sel = med3(0, sel, len - 1);
 
     partial_shuffle(arr, from, from + len, to);
-    select(arr, from, from + len, from + sel, guess_pivot, 0);
+    select(arr, from, from + len, from + sel, sampling_pivot, 0);
 
     return from + sel;
 }

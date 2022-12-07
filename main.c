@@ -48,7 +48,7 @@ static choose_pivot pivots[] = {
 //    deterministic_adaptive_pivot,
 //    deterministic_strided_pivot,
     deterministic_adaptive_strided_pivot,
-    guess_pivot
+    sampling_pivot
 };
 
 static const char* alg_names[] = {
