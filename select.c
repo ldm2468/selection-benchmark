@@ -6,6 +6,7 @@
 
 #define G 5
 #define g ((G + 1) / 2)
+#define INSERTION_SORT_THRESHOLD 32
 
 static int med3(int a, int b, int c) {
     return a >= b ? b >= c ? b : a >= c ? c : a :
@@ -139,6 +140,10 @@ static double introduce_bias(double d, double b) {
 }
 
 int guess_pivot(int *arr, int from, int to, int k) {
+    if (to - from <= INSERTION_SORT_THRESHOLD) {
+        return random_pivot(arr, from, to, k);
+    }
+
     int sq = (int) sqrt((double) (to - from));
     int len = MIN(sq, (to - from) / MIN_GUESS_RATIO);
 
@@ -190,8 +195,6 @@ void reset_num_calls(void) {
     num_calls = 0;
     bad_pivots = 0;
 }
-
-#define INSERTION_SORT_THRESHOLD 32
 
 int select(int *arr, int from, int to, int k, choose_pivot strategy, int record) {
     while (to - from > INSERTION_SORT_THRESHOLD) {
