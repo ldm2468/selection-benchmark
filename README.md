@@ -53,6 +53,7 @@ The following plot shows the running time of each algorithm for various values o
 target element).
 
 ![Example plot of results](example_results.png)
+
 The plot was generated with the following commands.
 ```bash
 ./selection_benchmark -n 1000000 -t s -p t -r 20 -i 21 -a 110011 > test.csv
