@@ -51,6 +51,7 @@ Since BFPRT and BFPRTA+ are slower than the other algorithms, specifying `-a 110
 ## Results
 The following plot shows the running time of each algorithm for various values of `k/n` (the relative location of the
 target element).
+
 ![Example plot of results](example_results.png)
 The plot was generated with the following commands.
 ```bash
