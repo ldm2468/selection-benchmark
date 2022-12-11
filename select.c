@@ -150,10 +150,9 @@ int sampling_pivot(int *arr, int from, int to, int k) {
     double N = to - from;
     double n = len;
     double T = k - from;
-    double loc = ((n + 1.) / (N + 1.) * (T + 1.) - 1.) / (n - 1.);
-    double R = (T + 1.) / (N + 1.);
-    double sigma = sqrt(R * (1. - R) * (N - n) * (N + 1.) / (n + 2.)) / (n + 1.) / (n - 1.);
-    int sel = (int) (introduce_bias(loc, 2. * sigma) * (n - 1) + 0.5);
+    double loc = ((n + 1.) / (N + 1.) * (T + 1.) - 1.);
+    double sigma = sqrt((loc + 1.) * (n - loc) * (N - n) * (N + 1.) / (n + 2.)) / (n + 1.) / N;
+    int sel = (int) (introduce_bias(loc / (n - 1.), 2. * sigma) * (n - 1) + 0.5);
     sel = med3(0, sel, len - 1);
 
     partial_shuffle(arr, from, from + len, to);
