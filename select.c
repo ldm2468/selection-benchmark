@@ -144,7 +144,7 @@ int sampling_pivot(int *arr, int from, int to, int k) {
         return random_pivot(arr, from, to, k);
     }
 
-    int sq = (int) sqrt((double) (to - from));
+    int sq = (int) pow((double) (to - from), 2. / 3.);
     int len = MIN(sq, (to - from) / MIN_GUESS_RATIO);
 
     double N = to - from;
