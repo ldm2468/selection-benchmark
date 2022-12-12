@@ -23,10 +23,12 @@ enum array_type {
     uniform,
     rotated,
     nearly_sorted,
+    pyramid,
+    many_duplicates,
     array_type_end
 };
 
-static const char* array_type_chars = "asurn";
+static const char* array_type_chars = "asurnpm";
 
 static const char* array_type_names[] = {
     "ascending",
@@ -34,6 +36,8 @@ static const char* array_type_names[] = {
     "uniform",
     "rotated",
     "nearly sorted",
+    "pyramid",
+    "many duplicates"
 };
 
 #define PIVOT_ALG_COUNT 5
@@ -131,7 +135,7 @@ int main(int argc, char **argv) {
             }
             if (type == array_type_end) {
                 fprintf(stderr, "Invalid array type: valid types are\n"
-                                "'ascending', 'shuffled', 'uniform', 'rotated', and 'nearly_sorted'");
+                                "'ascending', 'shuffled', 'uniform', 'rotated', 'nearly_sorted', 'pyramid', and 'many_duplicates'");
                 exit(1);
             }
             break;
@@ -180,8 +184,8 @@ int main(int argc, char **argv) {
         default:
             fprintf(stderr, "Usage: %s [-n size] [-t type] [options]... \n", argv[0]);
             fprintf(stderr, "    -n: Size of array (default: 1000000)\n"
-                            "    -t: Type of array (ascending/shuffled/uniform/rotated/nearly_sorted, default: shuffled)\n"
-                            "        The type name may also be shortened to its first character (a/s/r)\n"
+                            "    -t: Type of array (ascending/shuffled/uniform/rotated/nearly_sorted/pyramid/many_duplicates, default: shuffled)\n"
+                            "        The type name may also be shortened to its first character (a/s/u/r/n/p/m)\n"
                             "    -m: A non-zero integer that affects the array in different ways depending on the type\n"
                             "        ascending/shuffled: the stride of the ascending (or shuffled) array (default: 1)\n"
                             "        random: the range of the random numbers in the array (default: n)\n"
@@ -201,7 +205,7 @@ int main(int argc, char **argv) {
 
     if (m == 0) {
         switch (type) {
-        case ascending: case shuffled: case rotated:
+        case ascending: case shuffled: case rotated: case pyramid:
             m = 1;
             break;
         case uniform:
@@ -209,6 +213,10 @@ int main(int argc, char **argv) {
             break;
         case nearly_sorted:
             m = n / 10;
+            break;
+        case many_duplicates:
+            m = n / 2;
+            break;
         default:
             break;
         }
@@ -302,6 +310,15 @@ int main(int argc, char **argv) {
                 case nearly_sorted:
                     fill_sequence(arr, 0, n, 0, 1, n);
                     swap_random(arr, 0, n, m);
+                    break;
+                case pyramid:
+                    fill_pyramid(arr, 0, n, m);
+                    shuffle(arr, 0, n);
+                    break;
+                case many_duplicates:
+                    fill_sequence(arr, 0, n, 0, 1, n);
+                    fill_sequence(arr, 0, m, 0, 0, 1);
+                    shuffle(arr, 0, n);
                     break;
                 default:
                     break;

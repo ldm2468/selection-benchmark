@@ -25,6 +25,18 @@ void fill_sequence(int *arr, int from, int to, int first, int step, int modulo) 
     }
 }
 
+void fill_pyramid(int *arr, int from, int to, int first) {
+    int x = first, y = 0;
+    for (int i = from; i < to; i++) {
+        arr[i] = x;
+        y++;
+        if (x <= y) {
+            x++;
+            y = 0;
+        }
+    }
+}
+
 void shuffle(int *arr, int from, int to) {
     /* fisher-yates shuffle */
     for (int i = to - 1; i > from; i--) {
