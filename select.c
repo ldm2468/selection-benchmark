@@ -133,8 +133,6 @@ int deterministic_adaptive_strided_pivot(int *arr, int from, int to, int k) {
     return offset + sel;
 }
 
-#define MIN_GUESS_RATIO 2
-
 static double introduce_bias(double d, double b) {
     return med3d(d + b, 0.5, d - b);
 }
@@ -144,8 +142,7 @@ int sampling_pivot(int *arr, int from, int to, int k) {
         return random_pivot(arr, from, to, k);
     }
 
-    int sq = (int) pow((double) (to - from), 2. / 3.);
-    int len = MIN(sq, (to - from) / MIN_GUESS_RATIO);
+    int len = (int) pow((double) (to - from), 2. / 3.);
 
     double N = to - from;
     double n = len;
