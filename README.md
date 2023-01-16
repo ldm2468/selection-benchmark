@@ -3,7 +3,7 @@ This project implements a new sample-based pivot strategy for quickselect that o
 selection strategies. A benchmark tool that can measure and compare the performance of various pivot strategies is
 also provided.
 
-(A paper/formal analysis of the algorithm is TBD.)
+(A poster that outlines the algorithm is available [here](https://ldm2468.com/papers/2022sample_pivot_poster.pdf).)
 
 ## Build Instructions
 The following commands generates build files and builds the benchmark tool.
@@ -33,8 +33,8 @@ Usage: ./selection_benchmark [-n size] [-t type] [options]...
     -i: The number of iterations (number of columns output, default: 51)
     -a: A binary mask of algorithms to run. (ex. 100101)
 ```
-When generating data to be plotted using the included `*.gp` gnuplot scripts, the option `-p t` (print times only) must
-be set.
+The option `-p t` (print times only) must be set to generate data that can be plotted with
+the included gnuplot scripts (`*.gp`).
 
 The following is a list of algorithms specifiable with the `-a` mask.
 ```
